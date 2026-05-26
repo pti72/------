@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>네온 두더지 잡기 (이지 모드)</title>
+    <style>
+        body {
+            background-color: #0b0b16;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+        }
+        h1 {
+            color: #00ff66;
+            text-shadow: 0 0 10px #00ff66, 0 0 20px #00ff66;
+            margin-bottom: 5px;
+            font-size: 28px;
+            letter-spacing: 2px;
+        }
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            width: 360px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .label { color: #ffaa00; }
+        .value { color: #fff; text-shadow: 0 0 5px #fff; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 110px);
+            grid-template-rows: repeat(3, 110px);
+            gap: 15px;
+            background: #05050a;
+            padding: 20px;
+            border: 4px solid #ff007f;
+            box-shadow: 0 0 15px #ff007f, inset 0 0 15px #ff007f;
+            border-radius: 10px;
+        }
+        
+        .hole {
+            background: #151525;
+            border: 2px solid #00f0ff;
+            box-shadow: inset 0 0 10px #00f0ff;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .mole {
+            width: 70px;
+            height: 70px;
+            background: radial-gradient(circle, #ffaa00 40%, #8b5a00 100%);
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 100%; 
+            transform: translateX(-50%);
+            transition: top 0.15s ease; /* 올라오는 속도도 약간 부드럽게 조정 */
+            box-shadow: 0 0 10px #ffaa00;
+        }
+        
+        .mole::before {
+            content: '👀';
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            font-size: 18px;
+        }
+        
+        .hole.up .mole {
+            top: 20px;
+        }
+
+        .hole.hit .mole {
+            background: #ff0000 !important;
+            box-shadow: 0 0 20px #ff0000;
+        }
+
+        #startBtn {
+            margin-top: 20px;
+            background: transparent;
+            border: 2px solid #00f0ff;
+            color: #00f0ff;
+            padding: 10px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            text-transform: uppercase;
+            box-shadow: 0 0 10px #00f0ff;
+            transition: 0.2s;
+        }
+        #startBtn:hover {
+            background: #00f0ff;
+            color: #05050a;
+            box-shadow: 0 0 20px #00f0ff;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>MOLE HUNTER (EASY)</h1>
+    
+    <div class="info-panel">
+        <div><span class="label">SCORE:</span> <span id="score" class="value">0</span></div>
+        <div><span class="label">TIME:</span> <span id="time" class="value">30</span>s</div>
+    </div>
+
+    <div class="grid">
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+        <div class="hole"><div class="mole"></div></div>
+    </div>
+
+    <button id="startBtn">START GAME</button>
+
+    <script>
+        const holes = document.querySelectorAll('.hole');
+        const scoreBoard = document.querySelector('#score');
+        const timeBoard = document.querySelector('#time');
+        const startBtn = document.querySelector('#startBtn');
+        
+        let lastHole;
+        let timeUp = false;
+        let score = 0;
+        let countdown;
+        let moleTimer;
+        let gameTime = 30;
+
+        function randomTime(min, max) {
+            return Math.round(Math.random() * (max - min) + min);
+        }
+
+        function randomHole(holes) {
+            const idx = Math.floor(Math.random() * holes.length);
+            const hole = holes[idx];
+            if (hole === lastHole) {
+                return randomHole(holes);
+            }
+            lastHole = hole;
+            return hole;
+        }
+
+        // 두더지 등장 로직 수정 (속도 대폭 하향)
+        function peep() {
+            // 최소 1.2초 ~ 최대 2초 동안 얼굴 들고 서있음 (혜자 모드)
+            const time = randomTime(1200, 2000); 
+            const hole = randomHole(holes);
+            hole.classList.add('up');
+            
+            moleTimer = setTimeout(() => {
+                hole.classList.remove('up');
+                hole.classList.remove('hit');
+                if (!timeUp) peep();
+            }, time);
+        }
+
+        function startGame() {
+            score = 0;
+            scoreBoard.textContent = score;
+            timeUp = false;
+            startBtn.style.disabled = true;
+            startBtn.style.opacity = 0.5;
+            
+            let timeLeft = gameTime;
+            timeBoard.textContent = timeLeft;
+
+            peep();
+
+            countdown = setInterval(() => {
+                timeLeft--;
+                timeBoard.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    timeUp = true;
+                    alert(`게임 끝! 최종 점수: ${score}점`);
+                    startBtn.style.disabled = false;
+                    startBtn.style.opacity = 1;
+                }
+            }, 1000);
+        }
+
+        function bonk(e) {
+            if(!e.isTrusted) return;
+            if(this.classList.contains('up') && !this.classList.contains('hit')) {
+                score += 10;
+                this.classList.add('hit');
+                scoreBoard.textContent = score;
+            }
+        }
+
+        holes.forEach(hole => hole.addEventListener('click', bonk));
+        startBtn.addEventListener('click', () => {
+            if (timeUp === false && countdown) return;
+            startGame();
+        });
+    </script>
+</body>
+</html>
